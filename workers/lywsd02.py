@@ -25,12 +25,16 @@ class Lywsd02Worker(BaseWorker):
         for name, lywsd02 in self.devices.items():
             try:
                 ret = lywsd02.readAll()
+                yield [
+                    MqttMessage(topic=self.format_topic(name), payload=json.dumps(ret)),
+                    MqttMessage(topic=self.format_topic(name, "availability"), payload="online")
+                ]
             except btle.BTLEDisconnectError as e:
                 self.log_connect_exception(_LOGGER, name, e)
+                yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
             except btle.BTLEException as e:
                 self.log_unspecified_exception(_LOGGER, name, e)
-            else:
-                yield [MqttMessage(topic=self.format_topic(name), payload=json.dumps(ret))]
+                yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
 
 
 class Lywsd02:

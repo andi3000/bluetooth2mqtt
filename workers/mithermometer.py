@@ -87,6 +87,7 @@ class MithermometerWorker(BaseWorker):
                     type(e).__name__,
                     suppress=True,
                 )
+                yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
             except DeviceTimeoutError:
                 logger.log_exception(
                     _LOGGER,
@@ -96,6 +97,7 @@ class MithermometerWorker(BaseWorker):
                     data["mac"],
                     suppress=True,
                 )
+                yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
 
     def update_device_state(self, name, poller):
         poller.clear_cache()
@@ -105,4 +107,7 @@ class MithermometerWorker(BaseWorker):
             "humidity": poller.parameter_value("humidity"),
             "battery": poller.parameter_value("battery"),
         }
-        return [MqttMessage(topic=self.format_topic(name), payload=json.dumps(ret))]
+        return [
+            MqttMessage(topic=self.format_topic(name), payload=json.dumps(ret)),
+            MqttMessage(topic=self.format_topic(name, "availability"), payload="online")
+	]
