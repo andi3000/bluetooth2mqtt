@@ -1,12 +1,16 @@
 [Unit]
 Description=Bluetooth MQTT gateway
-Documentation=https://github.com/zewelor/bt-mqtt-gateway
-After=network.target
+Documentation=https://github.com/andi3000/bt-mqtt-gateway
+After=bluetooth.service mosquitto.service
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
-WorkingDirectory=/home/user/bt-mqtt-gateway
-ExecStart=/home/user/bt-mqtt-gateway/service.sh
+User=openhab
+Group=openhabian
+WorkingDirectory=/opt/bt-mqtt-gateway
+ExecStart=/opt/bt-mqtt-gateway/service.sh
+RestartSec=60
 Restart=always
 
 [Install]
