@@ -134,22 +134,13 @@ class MifloraWorker(BaseWorker):
                 )
 
     def update_device_state(self, name, poller):
-        ret = []
         poller.clear_cache()
-        for attr in monitoredAttrs:
-            ret.append(
-                MqttMessage(
-                    topic=self.format_topic(name, attr),
-                    payload=poller.parameter_value(attr),
-                )
-            )
 
-        # Low battery binary sensor
-        ret.append(
-            MqttMessage(
-                topic=self.format_topic(name, ATTR_LOW_BATTERY),
-                payload=self.true_false_to_ha_on_off(poller.parameter_value(ATTR_BATTERY) < 10),
-            )
-        )
-
-        return ret
+        ret = {
+            "temperature": poller.parameter_value("temperature"),
+            "moisture": poller.parameter_value("moisture"),
+            "light": poller.parameter_value("light"),
+            "conductivity": poller.parameter_value("conductivity"),
+            "battery": poller.parameter_value(ATTR_BATTERY),
+        }
+        return [MqttMessage(topic=self.format_topic(name), payload=json.dumps(ret))]
