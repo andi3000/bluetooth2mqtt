@@ -9,7 +9,7 @@ Type=simple
 User=openhab
 Group=openhabian
 WorkingDirectory=/opt/bt-mqtt-gateway
-ExecStart=/opt/bt-mqtt-gateway/service.sh
+ExecStart=/opt/bt-mqtt-gateway/bt-mqtt-gateway.sh
 RestartSec=60
 Restart=always
 
