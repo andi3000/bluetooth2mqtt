@@ -9,10 +9,11 @@ import logger
 REQUIREMENTS = ["mithermometer==0.1.4", "bluepy"]
 monitoredAttrs = ["temperature", "humidity", "battery"]
 _LOGGER = logger.get(__name__)
-
+ERRORS_TO_OFFLINE = 5
 
 class MithermometerWorker(BaseWorker):
     per_device_timeout = DEFAULT_PER_DEVICE_TIMEOUT  # type: int
+    error_count = 0
 
     def _setup(self):
         from mithermometer.mithermometer_poller import MiThermometerPoller
@@ -67,6 +68,11 @@ class MithermometerWorker(BaseWorker):
 
         return ret
 
+    def avail_offline(self):
+        self.error_count+= 1
+        if (self.error_count >= ERRORS_TO_OFFLINE):
+            yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
+
     def status_update(self):
         _LOGGER.info("Updating %d %s devices", len(self.devices), repr(self))
 
@@ -87,7 +93,7 @@ class MithermometerWorker(BaseWorker):
                     type(e).__name__,
                     suppress=True,
                 )
-                yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
+                self.avail_offline()
             except DeviceTimeoutError:
                 logger.log_exception(
                     _LOGGER,
@@ -97,17 +103,18 @@ class MithermometerWorker(BaseWorker):
                     data["mac"],
                     suppress=True,
                 )
-                yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
+                self.avail_offline()
 
     def update_device_state(self, name, poller):
         poller.clear_cache()
 
-        ret = {
+        data = {
             "temperature": poller.parameter_value("temperature"),
             "humidity": poller.parameter_value("humidity"),
             "battery": poller.parameter_value("battery"),
         }
-        return [
-            MqttMessage(topic=self.format_topic(name), payload=json.dumps(ret)),
-            MqttMessage(topic=self.format_topic(name, "availability"), payload="online")
-	]
+        ret = [MqttMessage(topic=self.format_topic(name), payload=json.dumps(data))]
+        if (self.error_count >= ERRORS_TO_OFFLINE):
+            ret.append(MqttMessage(topic=self.format_topic(name, "availability"), payload="online"))
+        self.error_count = 0
+        return ret
