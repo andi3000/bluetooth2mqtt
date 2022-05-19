@@ -14,6 +14,7 @@ ERRORS_TO_OFFLINE = 5
 class MithermometerWorker(BaseWorker):
     per_device_timeout = DEFAULT_PER_DEVICE_TIMEOUT  # type: int
     error_count = 0
+    is_online = None
 
     def _setup(self):
         from mithermometer.mithermometer_poller import MiThermometerPoller
@@ -68,7 +69,7 @@ class MithermometerWorker(BaseWorker):
 
         return ret
 
-    def avail_offline(self):
+    def avail_offline(self, name):
         self.error_count+= 1
         if (self.error_count >= ERRORS_TO_OFFLINE):
             yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
@@ -93,7 +94,7 @@ class MithermometerWorker(BaseWorker):
                     type(e).__name__,
                     suppress=True,
                 )
-                self.avail_offline()
+                self.avail_offline(name)
             except DeviceTimeoutError:
                 logger.log_exception(
                     _LOGGER,
@@ -103,7 +104,7 @@ class MithermometerWorker(BaseWorker):
                     data["mac"],
                     suppress=True,
                 )
-                self.avail_offline()
+                self.avail_offline(name)
 
     def update_device_state(self, name, poller):
         poller.clear_cache()
@@ -114,7 +115,8 @@ class MithermometerWorker(BaseWorker):
             "battery": poller.parameter_value("battery"),
         }
         ret = [MqttMessage(topic=self.format_topic(name), payload=json.dumps(data))]
-        if (self.error_count >= ERRORS_TO_OFFLINE):
+        if (self.error_count >= ERRORS_TO_OFFLINE or self.is_online is not True):
             ret.append(MqttMessage(topic=self.format_topic(name, "availability"), payload="online"))
+            self.is_online = True
         self.error_count = 0
         return ret

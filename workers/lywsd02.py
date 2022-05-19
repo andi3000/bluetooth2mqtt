@@ -15,6 +15,7 @@ ERRORS_TO_OFFLINE = 5
 
 class Lywsd02Worker(BaseWorker):
     error_count = 0
+    is_online = None
 
     def _setup(self):
         _LOGGER.info("Adding %d %s devices", len(self.devices), repr(self))
@@ -22,7 +23,7 @@ class Lywsd02Worker(BaseWorker):
             _LOGGER.info("Adding %s device '%s' (%s)", repr(self), name, mac)
             self.devices[name] = Lywsd02(mac, timeout=self.command_timeout)
 
-    def avail_offline(self):
+    def avail_offline(self, name):
         self.error_count+= 1
         if (self.error_count >= ERRORS_TO_OFFLINE):
             yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
@@ -34,16 +35,17 @@ class Lywsd02Worker(BaseWorker):
             try:
                 data = lywsd02.readAll()
                 ret = [MqttMessage(topic=self.format_topic(name), payload=json.dumps(data))]
-                if (self.error_count >= ERRORS_TO_OFFLINE):
+                if (self.error_count >= ERRORS_TO_OFFLINE or self.is_online is not True):
                     ret.append(MqttMessage(topic=self.format_topic(name, "availability"), payload="online"))
+                    self.is_online = True
                 self.error_count = 0
                 yield ret
             except btle.BTLEDisconnectError as e:
                 self.log_connect_exception(_LOGGER, name, e)
-                self.avail_offline()
+                self.avail_offline(name)
             except btle.BTLEException as e:
                 self.log_unspecified_exception(_LOGGER, name, e)
-                self.avail_offline()
+                self.avail_offline(name)
 
 
 class Lywsd02:
