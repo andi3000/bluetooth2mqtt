@@ -26,6 +26,7 @@ class Lywsd02Worker(BaseWorker):
     def avail_offline(self, name):
         self.error_count+= 1
         if (self.error_count >= ERRORS_TO_OFFLINE):
+            self.is_online = False
             yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
 
     def status_update(self):
