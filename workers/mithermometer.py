@@ -74,6 +74,7 @@ class MithermometerWorker(BaseWorker):
         _LOGGER.info("  Error count for %s is %d", name, self.error_count)
         if (self.error_count >= ERRORS_TO_OFFLINE):
             self.is_online = False
+            self.error_count = 0
             return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
         else:
             return []
