@@ -108,10 +108,12 @@ class MifloraWorker(BaseWorker):
 
     def avail_offline(self, name):
         self.error_count+= 1
-        _LOGGER.debug("  Error count for %s is %d", name, self.error_count)
+        _LOGGER.info("  Error count for %s is %d", name, self.error_count)
         if (self.error_count >= ERRORS_TO_OFFLINE):
             self.is_online = False
-            yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
+            return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
+        else:
+            return None
 
     def status_update(self):
         _LOGGER.info("Updating %d %s devices", len(self.devices), repr(self))
