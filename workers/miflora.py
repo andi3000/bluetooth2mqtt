@@ -113,7 +113,7 @@ class MifloraWorker(BaseWorker):
             self.is_online = False
             return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
         else:
-            return None
+            return []
 
     def status_update(self):
         _LOGGER.info("Updating %d %s devices", len(self.devices), repr(self))

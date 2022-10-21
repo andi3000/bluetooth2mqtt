@@ -30,7 +30,7 @@ class Lywsd02Worker(BaseWorker):
             self.is_online = False
             return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
         else:
-            return None
+            return []
 
     def status_update(self):
         from bluepy import btle
