@@ -71,6 +71,7 @@ class MithermometerWorker(BaseWorker):
 
     def avail_offline(self, name):
         self.error_count+= 1
+        _LOGGER.debug("  Error count for %s is %d", name, self.error_count)
         if (self.error_count >= ERRORS_TO_OFFLINE):
             self.is_online = False
             yield [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
@@ -95,7 +96,7 @@ class MithermometerWorker(BaseWorker):
                     type(e).__name__,
                     suppress=True,
                 )
-                self.avail_offline(name)
+                yield self.avail_offline(name)
             except DeviceTimeoutError:
                 logger.log_exception(
                     _LOGGER,
@@ -105,7 +106,7 @@ class MithermometerWorker(BaseWorker):
                     data["mac"],
                     suppress=True,
                 )
-                self.avail_offline(name)
+                yield self.avail_offline(name)
 
     def update_device_state(self, name, poller):
         poller.clear_cache()
