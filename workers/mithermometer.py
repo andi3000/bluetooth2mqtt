@@ -9,7 +9,7 @@ import logger
 REQUIREMENTS = ["mithermometer==0.1.4", "bluepy"]
 monitoredAttrs = ["temperature", "humidity", "battery"]
 _LOGGER = logger.get(__name__)
-ERRORS_TO_OFFLINE = 5
+ERRORS_TO_OFFLINE = 7
 
 class MithermometerWorker(BaseWorker):
     per_device_timeout = DEFAULT_PER_DEVICE_TIMEOUT  # type: int
@@ -72,9 +72,9 @@ class MithermometerWorker(BaseWorker):
     def avail_offline(self, name):
         self.error_count+= 1
         _LOGGER.info("  Error count for %s is %d", name, self.error_count)
-        if (self.error_count >= ERRORS_TO_OFFLINE):
+        if (self.error_count >= ERRORS_TO_OFFLINE and self.is_online is not False):
             self.is_online = False
-            self.error_count = 0
+            #self.error_count = 0
             return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
         else:
             return []
