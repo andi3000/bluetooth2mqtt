@@ -112,16 +112,17 @@ class MithermometerWorker(BaseWorker):
                 yield self.avail_offline(name)
 
     def update_device_state(self, name, poller):
+        ret = []
         poller.clear_cache()
-
-        data = {
-            "temperature": poller.parameter_value("temperature"),
-            "humidity": poller.parameter_value("humidity"),
-            "battery": poller.parameter_value("battery"),
-        }
-        ret = [MqttMessage(topic=self.format_topic(name), payload=json.dumps(data))]
+        for attr in monitoredAttrs:
+            ret.append(
+                MqttMessage(
+                    topic=self.format_topic(name, attr),
+                    payload=poller.parameter_value(attr),
+                )
+            )
         if (self.error_count >= self.errors_to_offline or self.is_online is not True):
             ret.append(MqttMessage(topic=self.format_topic(name, "availability"), payload="online"))
             self.is_online = True
-        self.error_count = 0
+        self.error_count = 0   
         return ret
