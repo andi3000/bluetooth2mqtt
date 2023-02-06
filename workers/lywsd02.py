@@ -1,6 +1,7 @@
 import json
 import logger
 
+from const import DEFAULT_ERRORS_TO_OFFLINE_COUNT
 from contextlib import contextmanager
 from struct import unpack
 
@@ -11,9 +12,8 @@ _LOGGER = logger.get(__name__)
 
 REQUIREMENTS = ["bluepy"]
 
-ERRORS_TO_OFFLINE = 7
-
 class Lywsd02Worker(BaseWorker):
+    errors_to_offline = DEFAULT_ERRORS_TO_OFFLINE_COUNT  # type: int
     error_count = 0
     is_online = None
 
@@ -26,7 +26,7 @@ class Lywsd02Worker(BaseWorker):
     def avail_offline(self, name):
         self.error_count+= 1
         _LOGGER.info("  Error count for %s is %d", name, self.error_count)
-        if (self.error_count >= ERRORS_TO_OFFLINE and self.is_online is not False):
+        if (self.error_count >= self.errors_to_offline and self.is_online is not False):
             self.is_online = False
             #self.error_count = 0
             return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
@@ -40,7 +40,7 @@ class Lywsd02Worker(BaseWorker):
             try:
                 data = lywsd02.readAll()
                 ret = [MqttMessage(topic=self.format_topic(name), payload=json.dumps(data))]
-                if (self.error_count >= ERRORS_TO_OFFLINE or self.is_online is not True):
+                if (self.error_count >= self.errors_to_offline or self.is_online is not True):
                     ret.append(MqttMessage(topic=self.format_topic(name, "availability"), payload="online"))
                     self.is_online = True
                 self.error_count = 0

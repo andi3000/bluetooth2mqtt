@@ -1,4 +1,4 @@
-from const import DEFAULT_PER_DEVICE_TIMEOUT
+from const import DEFAULT_PER_DEVICE_TIMEOUT, DEFAULT_ERRORS_TO_OFFLINE_COUNT
 from exceptions import DeviceTimeoutError
 from mqtt import MqttMessage, MqttConfigMessage
 from interruptingcow import timeout
@@ -9,10 +9,10 @@ import logger
 REQUIREMENTS = ["mithermometer==0.1.4", "bluepy"]
 monitoredAttrs = ["temperature", "humidity", "battery"]
 _LOGGER = logger.get(__name__)
-ERRORS_TO_OFFLINE = 7
 
 class MithermometerWorker(BaseWorker):
     per_device_timeout = DEFAULT_PER_DEVICE_TIMEOUT  # type: int
+    errors_to_offline = DEFAULT_ERRORS_TO_OFFLINE_COUNT  # type: int
     error_count = 0
     is_online = None
 
@@ -72,7 +72,7 @@ class MithermometerWorker(BaseWorker):
     def avail_offline(self, name):
         self.error_count+= 1
         _LOGGER.info("  Error count for %s is %d", name, self.error_count)
-        if (self.error_count >= ERRORS_TO_OFFLINE and self.is_online is not False):
+        if (self.error_count >= self.errors_to_offline and self.is_online is not False):
             self.is_online = False
             #self.error_count = 0
             return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
@@ -120,7 +120,7 @@ class MithermometerWorker(BaseWorker):
             "battery": poller.parameter_value("battery"),
         }
         ret = [MqttMessage(topic=self.format_topic(name), payload=json.dumps(data))]
-        if (self.error_count >= ERRORS_TO_OFFLINE or self.is_online is not True):
+        if (self.error_count >= self.errors_to_offline or self.is_online is not True):
             ret.append(MqttMessage(topic=self.format_topic(name, "availability"), payload="online"))
             self.is_online = True
         self.error_count = 0
