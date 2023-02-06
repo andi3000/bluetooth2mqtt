@@ -4,11 +4,15 @@ import functools
 import logging
 
 import tenacity
+from const import DEFAULT_ERRORS_TO_OFFLINE_COUNT
 
 _LOGGER = logger.get(__name__)
 
-
 class BaseWorker:
+    error_count = 0
+    is_online = None
+    errors_to_offline = DEFAULT_ERRORS_TO_OFFLINE_COUNT  # type: int
+
     def __init__(self, command_timeout, command_retries, update_retries, global_topic_prefix, **kwargs):
         self.command_timeout = command_timeout
         self.command_retries = command_retries
@@ -42,6 +46,16 @@ class BaseWorker:
         if self.global_topic_prefix:
             return "{}/{}".format(self.global_topic_prefix, topic)
         return topic
+
+    def avail_offline(self, name):
+        self.error_count+= 1
+        _LOGGER.info("  Error count for %s is %d", name, self.error_count)
+        if (self.error_count >= self.errors_to_offline and self.is_online is not False):
+            self.is_online = False
+            #self.error_count = 0
+            return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
+        else:
+            return []
 
     def __repr__(self):
         return self.__module__.split(".")[-1]
@@ -92,25 +106,27 @@ class BaseWorker:
             suppress=True,
         )
 
+
 def retry(_func=None, *, retries=0, exception_type=Exception):
     def log_retry(retry_state):
         _LOGGER.info(
-                'Call to %s failed the %s time (%s). Retrying in %s seconds',
-                '.'.join((retry_state.fn.__module__, retry_state.fn.__name__)),
-                retry_state.attempt_number,
-                type(retry_state.outcome.exception()).__name__,
-                '{:.2f}'.format(getattr(retry_state.next_action, 'sleep')))
+            'Call to %s failed the %s time (%s). Retrying in %s seconds',
+            '.'.join((retry_state.fn.__module__, retry_state.fn.__name__)),
+            retry_state.attempt_number,
+            type(retry_state.outcome.exception()).__name__,
+            '{:.2f}'.format(getattr(retry_state.next_action, 'sleep')))
 
     def decorator_retry(func):
         @functools.wraps(func)
         def wrapped_retry(*args, **kwargs):
             retryer = tenacity.Retrying(
-                    wait=tenacity.wait_random(1, 3),
-                    retry=tenacity.retry_if_exception_type(exception_type),
-                    stop=tenacity.stop_after_attempt(retries+1),
-                    reraise=True,
-                    before_sleep=log_retry)
+                wait=tenacity.wait_random(1, 3),
+                retry=tenacity.retry_if_exception_type(exception_type),
+                stop=tenacity.stop_after_attempt(retries + 1),
+                reraise=True,
+                before_sleep=log_retry)
             return retryer(func, *args, **kwargs)
+
         return wrapped_retry
 
     if _func:

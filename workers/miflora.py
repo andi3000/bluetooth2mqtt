@@ -1,4 +1,4 @@
-from const import DEFAULT_PER_DEVICE_TIMEOUT, DEFAULT_ERRORS_TO_OFFLINE_COUNT
+from const import DEFAULT_PER_DEVICE_TIMEOUT
 from exceptions import DeviceTimeoutError
 from mqtt import MqttMessage, MqttConfigMessage
 
@@ -22,9 +22,6 @@ _LOGGER = logger.get(__name__)
 
 class MifloraWorker(BaseWorker):
     per_device_timeout = DEFAULT_PER_DEVICE_TIMEOUT  # type: int
-    errors_to_offline = DEFAULT_ERRORS_TO_OFFLINE_COUNT  # type: int
-    error_count = 0
-    is_online = None
 
     def _setup(self):
         from miflora.miflora_poller import MiFloraPoller
@@ -102,18 +99,7 @@ class MifloraWorker(BaseWorker):
                 },
             )
         )
-
         return ret
-
-    def avail_offline(self, name):
-        self.error_count+= 1
-        _LOGGER.info("  Error count for %s is %d", name, self.error_count)
-        if (self.error_count >= self.errors_to_offline and self.is_online is not False):
-            self.is_online = False
-            #self.error_count = 0
-            return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
-        else:
-            return []
 
     def status_update(self):
         _LOGGER.info("Updating %d %s devices", len(self.devices), repr(self))
