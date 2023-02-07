@@ -2,9 +2,9 @@ import logger
 
 import functools
 import logging
-
 import tenacity
 from const import DEFAULT_ERRORS_TO_OFFLINE_COUNT
+from mqtt import MqttMessage
 
 _LOGGER = logger.get(__name__)
 
