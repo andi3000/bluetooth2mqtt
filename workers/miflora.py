@@ -4,6 +4,7 @@ from mqtt import MqttMessage, MqttConfigMessage
 
 from interruptingcow import timeout
 from workers.base import BaseWorker, retry
+import json
 import logger
 
 REQUIREMENTS = [
