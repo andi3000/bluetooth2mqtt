@@ -68,8 +68,8 @@ class Lywsd02:
             _LOGGER.debug("successfully read %f, %d, %d", temperature, humidity, battery)
 
             return {
-                "temperature": temperature,
-                "humidity": humidity,
+                "temperature": round(temperature, 1),
+                "humidity": round(humidity, 1),
                 "battery": battery,
             }
 
