@@ -50,7 +50,7 @@ class BaseWorker:
 
     def avail_offline(self, name):
         self.error_count+= 1
-        _LOGGER.info("  Error count for %s is %d", name, self.error_count)
+        _LOGGER.info("  Error count for %s is %d (from %d)", name, self.error_count, self.errors_to_offline)
         if (self.error_count >= self.errors_to_offline and self.is_online is not False):
             self.is_online = False
             #self.error_count = 0
