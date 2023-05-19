@@ -3,12 +3,13 @@ import logger
 import functools
 import logging
 import tenacity
-from const import DEFAULT_ERRORS_TO_OFFLINE_COUNT
+from const import DEFAULT_ERRORS_TO_OFFLINE_COUNT, DEFAULT_PER_DEVICE_TIMEOUT
 from mqtt import MqttMessage
 
 _LOGGER = logger.get(__name__)
 
 class BaseWorker:
+    per_device_timeout = DEFAULT_PER_DEVICE_TIMEOUT  # type: int
     error_count = 0
     is_online = None
     errors_to_offline = DEFAULT_ERRORS_TO_OFFLINE_COUNT  # type: int

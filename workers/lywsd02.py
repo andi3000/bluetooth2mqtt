@@ -11,6 +11,7 @@ _LOGGER = logger.get(__name__)
 
 REQUIREMENTS = ["bluepy"]
 
+
 class Lywsd02Worker(BaseWorker):
     def _setup(self):
         _LOGGER.info("Adding %d %s devices", len(self.devices), repr(self))

@@ -21,8 +21,8 @@ ATTR_LOW_BATTERY = 'low_battery'
 monitoredAttrs = ["temperature", "moisture", "light", "conductivity", ATTR_BATTERY]
 _LOGGER = logger.get(__name__)
 
+
 class MifloraWorker(BaseWorker):
-    per_device_timeout = DEFAULT_PER_DEVICE_TIMEOUT  # type: int
 
     def _setup(self):
         from miflora.miflora_poller import MiFloraPoller
