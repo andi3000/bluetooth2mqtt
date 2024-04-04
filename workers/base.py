@@ -51,9 +51,10 @@ class BaseWorker:
     def avail_offline(self, name):
         self.error_count+= 1
         _LOGGER.info("  Error count for %s is %d (from %d)", name, self.error_count, self.errors_to_offline)
-        if (self.error_count >= self.errors_to_offline and (self.is_online is not False or self.error_count % 100 == 0)):
+        if (self.error_count >= self.errors_to_offline and (self.is_online is not False or (self.error_count % 100) == 0)):
             self.is_online = False
             #self.error_count = 0
+            _LOGGER.info("  Send availability: 'offline' for device %s", name)
             return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
         else:
             return []
