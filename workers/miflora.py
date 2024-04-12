@@ -146,7 +146,7 @@ class MifloraWorker(BaseWorker):
         }
         ret = [MqttMessage(topic=self.format_topic(name), payload=json.dumps(data))]
         if (self.error_count >= self.errors_to_offline or self.is_online is not True):
-            ret.append(MqttMessage(topic=self.format_topic(name, "availability"), payload="online"))
+            ret.append(MqttMessage(topic=self.format_topic(name, "availability"), payload="online", retain=True))
             self.is_online = True
         self.error_count = 0
         return ret

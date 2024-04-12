@@ -55,7 +55,7 @@ class BaseWorker:
             self.is_online = False
             #self.error_count = 0
             _LOGGER.info("  Send availability: 'offline' for device %s", name)
-            return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline")]
+            return [MqttMessage(topic=self.format_topic(name, "availability"), payload="offline", retain=True)]
         else:
             return []
 
